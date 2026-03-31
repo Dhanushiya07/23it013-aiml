@@ -1,0 +1,230 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyN3lG85P+HnOLjPWqenwaVT",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/Dhanushiya07/23it013-aiml/blob/main/Agentic%20AI\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "9nb7UcjvU_K8"
+      },
+      "outputs": [],
+      "source": [
+        "!pip install langchain langchain-community langchain-text-splitters faiss-cpu sentence-transformers"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter\n",
+        "from langchain_community.embeddings import HuggingFaceEmbeddings\n",
+        "from langchain_community.vectorstores import FAISS"
+      ],
+      "metadata": {
+        "id": "ofDEZ3AOVNeZ"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from langchain_core.documents import Document\n",
+        "\n",
+        "# Example document (replace with your resume or file)\n",
+        "documents = [\n",
+        "    Document(page_content=\"Dhanushiya is skilled in Python, Java, SQL and Machine Learning.\"),\n",
+        "    Document(page_content=\"She has experience in web development and data analysis.\"),\n",
+        "]"
+      ],
+      "metadata": {
+        "id": "Xl2FEYpMVVni"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "char_splitter = CharacterTextSplitter(\n",
+        "    separator=\"\\n\",\n",
+        "    chunk_size=200,\n",
+        "    chunk_overlap=20\n",
+        ")\n",
+        "\n",
+        "char_docs = char_splitter.split_documents(documents)\n",
+        "\n",
+        "# PRINT OUTPUT\n",
+        "for i, chunk in enumerate(char_docs[:10]):\n",
+        "    print(f\"\\n🔹 Chunk {i+1}:\")\n",
+        "    print(chunk.page_content)\n",
+        "    print(\"-\" * 50)\n",
+        "\n",
+        "print(\"Total Character Chunks:\", len(char_docs))"
+      ],
+      "metadata": {
+        "id": "yTfd3_exVX6H"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "recursive_splitter = RecursiveCharacterTextSplitter(\n",
+        "    chunk_size=200,\n",
+        "    chunk_overlap=20\n",
+        ")\n",
+        "\n",
+        "recursive_docs = recursive_splitter.split_documents(documents)\n",
+        "\n",
+        "# PRINT OUTPUT\n",
+        "for i, chunk in enumerate(recursive_docs[:10]):\n",
+        "    print(f\"\\n🔹 Recursive Chunk {i+1}:\")\n",
+        "    print(chunk.page_content)\n",
+        "    print(\"-\" * 50)\n",
+        "\n",
+        "print(\"Total Recursive Chunks:\", len(recursive_docs))"
+      ],
+      "metadata": {
+        "id": "MHTwlqcFVaPs"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "embedding = HuggingFaceEmbeddings(\n",
+        "    model_name=\"all-MiniLM-L6-v2\"\n",
+        ")"
+      ],
+      "metadata": {
+        "id": "Hnt_XtiyVcqt"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "vectorstore = FAISS.from_documents(\n",
+        "    recursive_docs,   # you can also use char_docs\n",
+        "    embedding\n",
+        ")"
+      ],
+      "metadata": {
+        "id": "B577Pj1jVfIN"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "retriever = vectorstore.as_retriever()"
+      ],
+      "metadata": {
+        "id": "fDNxA5fNVhKZ"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "vectorstore.save_local(\"resume_vector_db\")"
+      ],
+      "metadata": {
+        "id": "AuB3vRY-Vj3p"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "query = \"What are the skills?\"\n",
+        "\n",
+        "docs = retriever.invoke(query)\n",
+        "\n",
+        "for i, doc in enumerate(docs):\n",
+        "    print(f\"\\n🔹 Result {i+1}:\")\n",
+        "    print(doc.page_content)\n",
+        "    print(\"-\" * 50)"
+      ],
+      "metadata": {
+        "id": "V4N-PJLrVmMt"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(\"Total vectors stored:\", len(vectorstore.index_to_docstore_id))"
+      ],
+      "metadata": {
+        "id": "bBw5lrUtVoef"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def chat_with_resume(query):\n",
+        "    # 🔍 Retrieve relevant chunks\n",
+        "    docs = retriever.invoke(query)\n",
+        "\n",
+        "    # 🧠 Combine context\n",
+        "    context = \"\\n\".join([doc.page_content for doc in docs])\n",
+        "\n",
+        "    # 🤖 Ask LLM\n",
+        "    response = llm.invoke(\n",
+        "        f\"\"\"\n",
+        "        You are a resume assistant.\n",
+        "        Answer only from the given context.\n",
+        "\n",
+        "        Context:\n",
+        "        {context}\n",
+        "\n",
+        "        Question:\n",
+        "        {query}\n",
+        "        \"\"\"\n",
+        "    )\n",
+        "\n",
+        "    return response.content"
+      ],
+      "metadata": {
+        "id": "LoygIsp0YL9G"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
